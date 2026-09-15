@@ -6,9 +6,10 @@
  * The scope icon swaps to the project favicon while a project is selected,
  * so the header still names the scope after the row that showed it is gone.
  *
- * The scope picker itself is passed in: its combobox state lives with the rest
- * of the sidebar's scope logic. `searchFieldRef` lands on the search field so
- * the picker's popup can anchor to that width rather than to its 28px trigger.
+ * The scope pickers themselves are passed in: their combobox state lives with
+ * the rest of the sidebar's scope logic. `searchFieldRef` lands on the search
+ * field so a picker's popup can anchor to that width rather than to its 28px
+ * trigger.
  */
 import { FolderPlusIcon, SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
 import {
@@ -30,6 +31,12 @@ export interface SidebarThreadHeaderProps {
   searchFieldRef?: RefObject<HTMLDivElement | null>;
   /** Without projects there is nothing to scope, so those controls stay out. */
   hasProjects: boolean;
+  /**
+   * The environment scope combobox, rendered as an icon ahead of the project
+   * group. Null while a single environment is connected. Rendered outside the
+   * project gate so a scope with no projects can still be escaped.
+   */
+  environmentScope: ReactNode;
   /** The project scope combobox, rendered as the first icon of the group. */
   projectScope: ReactNode;
   onNewProject: () => void;
@@ -53,6 +60,7 @@ export interface SidebarThreadHeaderProps {
 export function SidebarThreadHeader({
   searchFieldRef,
   hasProjects,
+  environmentScope,
   projectScope,
   onNewProject,
   onNewThread,
@@ -125,6 +133,7 @@ export function SidebarThreadHeader({
       {/* Segmented well: the icons read as one control instead of three loose
           buttons competing with the search field beside them. */}
       <div className="flex shrink-0 items-center rounded-md bg-sidebar-control-surface/60 p-px">
+        {environmentScope}
         {hasProjects ? (
           <>
             {projectScope}
