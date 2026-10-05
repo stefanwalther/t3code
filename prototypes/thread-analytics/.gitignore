@@ -1,0 +1,5 @@
+# Generated snapshots (personal thread titles) must never be committed.
+*.json
+*.html
+*.sqlite
+*.sqlite-journal
