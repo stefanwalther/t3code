@@ -26,6 +26,16 @@ python3 prototypes/thread-analytics/t3-open-export.py --out /tmp/t3-open.json
 python3 prototypes/thread-analytics/build-t3-helper.py --in /tmp/t3-open.json --out /tmp/t3-threads-helper.html
 ```
 
+## Multiple machines
+
+One server only ever sees its own threads. Run `t3-open-export.py`
+on each machine, collect the small JSON files in one place, then:
+
+```bash
+python3 prototypes/thread-analytics/merge-t3-open.py --out /tmp/t3-open-all.json m4.json m1.json
+python3 prototypes/thread-analytics/build-t3-helper.py --in /tmp/t3-open-all.json --out /tmp/t3-threads-helper.html
+```
+
 Open means `deleted_at IS NULL AND archived_at IS NULL AND
 settled_at IS NULL` on `projection_threads`. Pickup means pending
 approval or input, an actionable plan, a failed run, or stale 7 days
