@@ -29,7 +29,11 @@ python3 prototypes/thread-analytics/build-t3-helper.py --in /tmp/t3-open.json --
 Open means `deleted_at IS NULL AND archived_at IS NULL AND
 settled_at IS NULL` on `projection_threads`. Pickup means pending
 approval or input, an actionable plan, a failed run, or stale 7 days
-or more.
+or more. Each T3 server only knows its own threads, so no machine
+column exists in the database; the export records the local hostname
+and a worktree location (`worktree`, `main`, `none`) per thread, and
+the dashboard filters on both. Merged snapshots from several machines
+work with the same fields.
 
 ## Style
 

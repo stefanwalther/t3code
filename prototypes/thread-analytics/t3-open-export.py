@@ -7,13 +7,13 @@ of git (see .gitignore in this folder).
 
 Usage: python3 t3-open-export.py [--db ~/.t3/userdata/statev2.sqlite] [--out t3-open.json]
 """
-import argparse, json, shutil, sqlite3, sys, tempfile, os
+import argparse, json, shutil, sqlite3, socket, sys, tempfile, os
 from pathlib import Path
 
 QUERY = """
 SELECT t.thread_id, p.title AS project, t.title, t.created_at, t.updated_at,
   t.latest_user_message_at, t.pending_approval_count, t.pending_user_input_count,
-  t.has_actionable_proposed_plan,
+  t.has_actionable_proposed_plan, t.worktree_path,
   CAST((julianday('now')-julianday(t.created_at)) AS INT) AS age_d,
   CAST((julianday('now')-julianday(t.updated_at)) AS INT) AS stale_d
 FROM projection_threads t
@@ -55,6 +55,16 @@ def main():
         tmp.unlink(missing_ok=True)
     for r in rows:
         r["runs"] = runs.get(r["thread_id"], [])
+        # Single-server DBs only know their own host. Recording the machine
+        # now keeps the field stable for later merged multi-machine snapshots.
+        r["machine"] = socket.gethostname()
+        path = r.get("worktree_path") or ""
+        if not path:
+            r["worktree_kind"] = "none"
+        elif "/.t3/worktrees/" in path:
+            r["worktree_kind"] = "worktree"
+        else:
+            r["worktree_kind"] = "main"
     Path(a.out).write_text(json.dumps(rows))
     pickup = sum(1 for r in rows if (
         r["pending_approval_count"] > 0 or r["pending_user_input_count"] > 0

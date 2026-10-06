@@ -113,6 +113,8 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 <div class="filters">
 <div class="field grow"><input type="search" id="q" placeholder="Filter titles"></div>
 <div class="field w160"><select id="proj"><option value="">All projects</option></select></div>
+<div class="field w160"><select id="mach"><option value="">All machines</option></select></div>
+<div class="field w160"><select id="loc"><option value="">Any location</option><option value="worktree">Worktree</option><option value="main">Main checkout</option><option value="none">No worktree</option></select></div>
 <div class="field w160"><select id="sort"><option value="oldest">Oldest first</option><option value="stale">Stalest first</option><option value="recent">Recent first</option><option value="newest">Newest first</option></select></div>
 <label class="check"><input type="checkbox" id="pickupOnly" checked> pickup only</label>
 <label class="check"><input type="checkbox" id="staleOnly"> stale 7d+</label>
@@ -129,11 +131,13 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 const ROWS = __DATA__;
 const proj=document.getElementById("proj");
 [...new Set(ROWS.map(r=>r.project))].sort().forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;proj.appendChild(o);});
+const mach=document.getElementById("mach");
+[...new Set(ROWS.map(r=>r.machine||"local"))].sort().forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;mach.appendChild(o);});
 function failed(r){return (r.runs||[]).some(x=>x[0]==="failed"&&x[1]>0);}
 function pickup(r){return r.pending_approval_count>0||r.pending_user_input_count>0||r.has_actionable_proposed_plan===1||failed(r)||r.stale_d>=7;}
 function badges(r){const b=[];if(r.pending_user_input_count>0)b.push("<span class='badge' data-size='sm' data-variant='error'>input "+r.pending_user_input_count+"</span>");if(r.pending_approval_count>0)b.push("<span class='badge' data-size='sm' data-variant='error'>approval "+r.pending_approval_count+"</span>");if(r.has_actionable_proposed_plan===1)b.push("<span class='badge' data-size='sm' data-variant='success'>plan</span>");if(failed(r))b.push("<span class='badge' data-size='sm' data-variant='warning'>failed</span>");if(r.stale_d>=7)b.push("<span class='badge' data-size='sm' data-variant='warning'>stale "+r.stale_d+"d</span>");return b.length?b.join(" "):"<span class='badge' data-size='sm' data-variant='secondary'>steady</span>";}
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function list(ignore){const q=document.getElementById("q").value.toLowerCase(),p=proj.value,s=document.getElementById("sort").value,po=document.getElementById("pickupOnly").checked&&!ignore,so=document.getElementById("staleOnly").checked;let o=ROWS.filter(r=>(!p||r.project===p)&&(!q||r.title.toLowerCase().includes(q))&&(!po||pickup(r))&&(!so||r.stale_d>=7));const by={oldest:(a,b)=>a.created_at.localeCompare(b.created_at),newest:(a,b)=>b.created_at.localeCompare(a.created_at),stale:(a,b)=>b.stale_d-a.stale_d,recent:(a,b)=>b.updated_at.localeCompare(a.updated_at)}[s];return o.sort(by);}
+function list(ignore){const q=document.getElementById("q").value.toLowerCase(),p=proj.value,m=mach.value,l=document.getElementById("loc").value,s=document.getElementById("sort").value,po=document.getElementById("pickupOnly").checked&&!ignore,so=document.getElementById("staleOnly").checked;let o=ROWS.filter(r=>(!p||r.project===p)&&(!m||(r.machine||"local")===m)&&(!l||r.worktree_kind===l)&&(!q||r.title.toLowerCase().includes(q))&&(!po||pickup(r))&&(!so||r.stale_d>=7));const by={oldest:(a,b)=>a.created_at.localeCompare(b.created_at),newest:(a,b)=>b.created_at.localeCompare(a.created_at),stale:(a,b)=>b.stale_d-a.stale_d,recent:(a,b)=>b.updated_at.localeCompare(a.updated_at)}[s];return o.sort(by);}
 function item(r){return "<div class='trow'><div class='num'><b>"+r.age_d+"d</b><br><span class='mut'>age</span></div><div class='num'><b>"+r.stale_d+"d</b><br><span class='mut'>stale</span></div><div><div class='rowtitle'>"+esc(r.title)+"</div><div class='mut mono'>"+esc(r.project)+" · "+r.updated_at.slice(0,10)+"</div><div style='margin-top:4px'>"+badges(r)+"</div></div></div>";}
 function render(){const all=list(true),pk=list(false).filter(pickup);const pl=pk.slice(0,15),ol=all.slice(0,15);
 document.getElementById("sOpen").textContent=ROWS.length;
@@ -149,7 +153,7 @@ document.getElementById("oldList").innerHTML=ol.map(item).join("");
 document.getElementById("allBody").innerHTML=all.map(r=>"<tr data-slot='table-row'><td data-slot='table-cell' class='num'>"+r.age_d+"d</td><td data-slot='table-cell' class='num'>"+r.stale_d+"d</td><td data-slot='table-cell'>"+esc(r.project)+"</td><td data-slot='table-cell'><b>"+esc(r.title)+"</b><br><span class='mut mono'>"+r.thread_id.slice(0,8)+" · "+badges(r)+"</span></td><td data-slot='table-cell' style='text-align:right'><button class='btn' data-variant='outline' data-size='sm' data-id='"+r.thread_id+"'>copy</button></td></tr>").join("");}
 document.addEventListener("input",e=>{if(e.target.id==="q")render();});
 document.addEventListener("change",render);
-document.getElementById("resetBtn").addEventListener("click",()=>{document.getElementById("q").value="";proj.value="";document.getElementById("sort").value="oldest";document.getElementById("pickupOnly").checked=false;document.getElementById("staleOnly").checked=false;render();});
+document.getElementById("resetBtn").addEventListener("click",()=>{document.getElementById("q").value="";proj.value="";mach.value="";document.getElementById("loc").value="";document.getElementById("sort").value="oldest";document.getElementById("pickupOnly").checked=false;document.getElementById("staleOnly").checked=false;render();});
 document.getElementById("themeBtn").addEventListener("click",()=>document.documentElement.classList.toggle("dark"));
 document.addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;navigator.clipboard.writeText(b.dataset.id).then(()=>{b.textContent="copied";setTimeout(()=>b.textContent="copy",1100);});});
 render();
