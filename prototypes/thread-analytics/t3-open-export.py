@@ -57,7 +57,9 @@ def main():
         r["runs"] = runs.get(r["thread_id"], [])
         # Single-server DBs only know their own host. Recording the machine
         # now keeps the field stable for later merged multi-machine snapshots.
-        r["machine"] = socket.gethostname()
+        # Match the environment display name T3 shows (LocalHostName,
+        # without the .local suffix that socket.gethostname() carries).
+        r["machine"] = socket.gethostname().removesuffix(".local")
         path = r.get("worktree_path") or ""
         if not path:
             r["worktree_kind"] = "none"
