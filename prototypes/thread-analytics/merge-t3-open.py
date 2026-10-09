@@ -18,7 +18,7 @@ def main():
     merged = {}
     for f in a.inputs:
         for r in json.loads(Path(f).read_text()):
-            merged[r["thread_id"]] = r
+            merged[(r.get("machine", "local"), r["thread_id"])] = r
     rows = sorted(merged.values(), key=lambda r: r["created_at"])
     Path(a.out).write_text(json.dumps(rows))
     machines = sorted({r.get("machine", "local") for r in rows})

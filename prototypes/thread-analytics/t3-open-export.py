@@ -8,6 +8,7 @@ of git (see .gitignore in this folder).
 Usage: python3 t3-open-export.py [--db ~/.t3/userdata/statev2.sqlite] [--out t3-open.json]
 """
 import argparse, json, shutil, sqlite3, socket, sys, tempfile, os
+import datetime
 from pathlib import Path
 
 QUERY = """
@@ -55,6 +56,7 @@ def main():
         tmp.unlink(missing_ok=True)
     for r in rows:
         r["runs"] = runs.get(r["thread_id"], [])
+        r["exported_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         # Single-server DBs only know their own host. Recording the machine
         # now keeps the field stable for later merged multi-machine snapshots.
         # Match the environment display name T3 shows (LocalHostName,

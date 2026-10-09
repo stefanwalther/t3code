@@ -101,6 +101,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 </div>
 <h1>What needs picking up</h1>
 <p class="sub">Same variant and size names as <code>apps/web/src/components/ui</code>. Tokens use T3 semantic names so this ports to a real route without restyle. Data is a read only temp backup copy.</p>
+<div class="mut mono" id="snapLine" style="margin:0 0 12px;font-size:12px"></div>
 <div class="stats">
 <div class="card stat"><div class="k">Open</div><div class="v" id="sOpen">–</div><div class="mut">in snapshot</div></div>
 <div class="card stat"><div class="k">Pickup</div><div class="v" id="sPickup">–</div><div class="mut">input, plan, failed, stale</div></div>
@@ -140,6 +141,8 @@ function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g
 function list(ignore){const q=document.getElementById("q").value.toLowerCase(),p=proj.value,m=mach.value,l=document.getElementById("loc").value,s=document.getElementById("sort").value,po=document.getElementById("pickupOnly").checked&&!ignore,so=document.getElementById("staleOnly").checked;let o=ROWS.filter(r=>(!p||r.project===p)&&(!m||(r.machine||"local")===m)&&(!l||r.worktree_kind===l)&&(!q||r.title.toLowerCase().includes(q))&&(!po||pickup(r))&&(!so||r.stale_d>=7));const by={oldest:(a,b)=>a.created_at.localeCompare(b.created_at),newest:(a,b)=>b.created_at.localeCompare(a.created_at),stale:(a,b)=>b.stale_d-a.stale_d,recent:(a,b)=>b.updated_at.localeCompare(a.updated_at)}[s];return o.sort(by);}
 function item(r){return "<div class='trow'><div class='num'><b>"+r.age_d+"d</b><br><span class='mut'>age</span></div><div class='num'><b>"+r.stale_d+"d</b><br><span class='mut'>stale</span></div><div><div class='rowtitle'>"+esc(r.title)+"</div><div class='mut mono'>"+esc(r.project)+" · "+r.updated_at.slice(0,10)+"</div><div style='margin-top:4px'>"+badges(r)+"</div></div></div>";}
 function render(){const all=list(true),pk=list(false).filter(pickup);const pl=pk.slice(0,15),ol=all.slice(0,15);
+const byMach={};ROWS.forEach(r=>{const m=r.machine||"local";if(!byMach[m]||(r.exported_at||"")>byMach[m].at)byMach[m]={at:r.exported_at||"?",n:0};byMach[m].n++;});
+document.getElementById("snapLine").textContent="Snapshots: "+Object.keys(byMach).sort().map(m=>m+" "+byMach[m].at.slice(0,16).replace("T"," ")+" ("+byMach[m].n+")").join(" · ");
 document.getElementById("sOpen").textContent=ROWS.length;
 document.getElementById("sPickup").textContent=ROWS.filter(pickup).length;
 document.getElementById("sStale").textContent=ROWS.filter(r=>r.stale_d>=7).length;
