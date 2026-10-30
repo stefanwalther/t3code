@@ -18,7 +18,40 @@ query the copy. Generated `*.json`, `*.html` and `*.sqlite` files are
 gitignored: they contain personal thread titles and must never be
 committed.
 
-## Usage
+## Live API collection (current path, M1 excluded)
+
+One GET per machine returns the whole dashboard, no sqlite copying:
+
+```bash
+python3 prototypes/thread-analytics/collect-api.py --out /tmp/t3-open-all.json
+python3 prototypes/thread-analytics/build-t3-helper.py --in /tmp/t3-open-all.json --out /tmp/t3dash/t3-threads-helper.html
+```
+
+`collect-api.py` polls `GET /api/orchestration/shell` on each machine
+listed in `~/.config/t3-dashboard/endpoints.json` (mode 0600, tokens
+never leave that machine) and normalizes rows to the same shape the
+sqlite export produces. Only top-level threads count: the shell
+carries the whole tree and subagent children are skipped via
+`lineage.parentThreadId`.
+
+Source of truth note, verified 2026-10-30: the v2 shell snapshot is
+live, `projection_threads` is legacy. v1 showed 37 open on M4 while
+the shell shows 127 live top-level threads, and v1 threads archived
+in v2 still read open in v1. Prefer the API rows going forward.
+
+Per-machine one-time setup: mint a read-only token on that machine,
+then add its URL and token to the collector config on M4:
+
+```bash
+t3 auth session issue --scope orchestration:read --ttl 90d \
+  --label thread-dashboard-collector --subject thread-dashboard --token-only
+```
+
+Tokens are revocable at any time with `t3 auth session revoke`.
+Server must be running on each machine to answer; offline machines
+stay absent and the dashboard freshness line shows it honestly.
+
+## Legacy sqlite export
 
 ```bash
 python3 prototypes/thread-analytics/t3-dashboard-prototype.py --out /tmp/t3-metrics.json
